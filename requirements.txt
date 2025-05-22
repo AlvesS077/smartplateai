@@ -1,0 +1,9 @@
+flask
+flask-cors
+pillow
+torch
+torchvision
+pandas
+openpyxl
+gunicorn
+gradio
