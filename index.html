@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Food Classifier</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .upload-box {
+      transition: all 0.3s ease;
+    }
+    .upload-box:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    .preview-container {
+      transition: all 0.5s ease;
+    }
+    .loading-spinner {
+      display: none;
+    }
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(30px);}
+      to { opacity: 1; transform: translateY(0);}
+    }
+    .animate-fade-in {
+      animation: fade-in 0.8s cubic-bezier(.4,0,.2,1) both;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
+  <div class="container mx-auto px-4 py-12 max-w-4xl">
+    <div class="text-center mb-12">
+      <h1 class="text-4xl font-bold text-green-800 mb-3">🍽️ Food Classifier</h1>
+      <p class="text-lg text-gray-600">Upload an image of your food and we'll analyze its nutritional content</p>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+      <div class="upload-box bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-12 text-center cursor-pointer mb-8"
+           onclick="document.getElementById('upload').click()">
+        <div class="flex flex-col items-center justify-center">
+          <i class="fas fa-cloud-upload-alt text-4xl text-green-500 mb-4"></i>
+          <h3 class="text-xl font-semibold text-gray-700 mb-2">Upload your food image</h3>
+          <p class="text-gray-500">Drag & drop or click to browse</p>
+        </div>
+        <input type="file" id="upload" accept="image/*" class="hidden" onchange="mostrarImagem(event)" />
+      </div>
+
+      <div class="preview-container flex flex-col items-center justify-center mb-8">
+        <div id="preview-wrapper" class="relative hidden">
+          <img id="preview" src="" alt="Preview" class="rounded-lg shadow-md max-h-96 object-contain" />
+          <button id="remove-btn" class="absolute -top-3 -right-3 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-md hover:bg-red-600 transition" onclick="removeImage()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <p id="no-image-text" class="text-gray-400 italic">No image selected</p>
+      </div>
+
+      <div class="flex justify-center">
+        <button id="submit-btn" class="submit-btn bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                onclick="enviarImagem()" disabled>
+          <span id="btn-text">Analyze Food</span>
+          <div id="loading-spinner" class="loading-spinner ml-2">
+            <i class="fas fa-circle-notch fa-spin"></i>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-lg p-8">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4">How it works</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="flex flex-col items-center text-center">
+          <div class="bg-green-100 p-4 rounded-full mb-3">
+            <i class="fas fa-upload text-green-600 text-2xl"></i>
+          </div>
+          <h3 class="font-medium text-gray-700 mb-2">1. Upload Image</h3>
+          <p class="text-gray-500">Upload a clear photo of your food</p>
+        </div>
+        <div class="flex flex-col items-center text-center">
+          <div class="bg-blue-100 p-4 rounded-full mb-3">
+            <i class="fas fa-brain text-blue-600 text-2xl"></i>
+          </div>
+          <h3 class="font-medium text-gray-700 mb-2">2. AI Analysis</h3>
+          <p class="text-gray-500">Our AI analyzes the food components</p>
+        </div>
+        <div class="flex flex-col items-center text-center">
+          <div class="bg-purple-100 p-4 rounded-full mb-3">
+            <i class="fas fa-chart-pie text-purple-600 text-2xl"></i>
+          </div>
+          <h3 class="font-medium text-gray-700 mb-2">3. Get Results</h3>
+          <p class="text-gray-500">Receive detailed nutritional information</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function mostrarImagem(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const preview = document.getElementById('preview');
+          preview.src = e.target.result;
+          document.getElementById('preview-wrapper').classList.remove('hidden');
+          document.getElementById('no-image-text').classList.add('hidden');
+          document.getElementById('submit-btn').disabled = false;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function removeImage() {
+      document.getElementById('preview').src = '';
+      document.getElementById('preview-wrapper').classList.add('hidden');
+      document.getElementById('no-image-text').classList.remove('hidden');
+      document.getElementById('upload').value = '';
+      document.getElementById('submit-btn').disabled = true;
+    }
+
+    function enviarImagem() {
+      const btn = document.getElementById('submit-btn');
+      const btnText = document.getElementById('btn-text');
+      const spinner = document.getElementById('loading-spinner');
+      const uploadInput = document.getElementById('upload');
+      const previewWrapper = document.getElementById('preview-wrapper');
+
+      // Show loading state
+      btn.disabled = true;
+      btnText.textContent = 'Analyzing...';
+      spinner.style.display = 'inline-block';
+
+      const file = uploadInput.files[0];
+      if (!file) {
+        alert('Please select an image first.');
+        btn.disabled = false;
+        btnText.textContent = 'Analyze Food';
+        spinner.style.display = 'none';
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      fetch('http://127.0.0.1:5000/analyze-food', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        btn.disabled = false;
+        btnText.textContent = 'Analyze Food';
+        spinner.style.display = 'none';
+
+        if (data.error) {
+          alert('Error: ' + data.error);
+          return;
+        }
+
+        let resultsContainer = document.getElementById('results-container');
+        if (!resultsContainer) {
+          resultsContainer = document.createElement('div');
+          resultsContainer.id = 'results-container';
+          resultsContainer.className = 'bg-white rounded-xl shadow-lg p-8 mt-8';
+          document.querySelector('.container').appendChild(resultsContainer);
+        }
+
+        // Ordem correta das colunas
+        const orderedColumns = [
+          'Plate Name',
+          'Protein (g)',
+          'Calories',
+          'Fat (g)',
+          'Carbs (g)',
+          'Fiber (g)'
+        ];
+
+        let excelHtml = '';
+        if (data.excel && !data.excel.error) {
+          excelHtml = '<ul class="list-disc pl-5">';
+          orderedColumns.forEach(key => {
+            if (data.excel[key] !== undefined) {
+              excelHtml += `<li><strong>${key}:</strong> ${data.excel[key]}</li>`;
+            }
+          });
+          excelHtml += '</ul>';
+        } else if (data.excel && data.excel.error) {
+          excelHtml = `<p class="text-red-500">${data.excel.error}</p>`;
+        }
+
+        resultsContainer.innerHTML = `
+          <div class="relative bg-gradient-to-br from-green-100 via-blue-50 to-purple-100 rounded-2xl shadow-2xl p-8 border-4 border-green-200 ring-2 ring-green-400/30 animate-fade-in">
+            <div class="absolute -top-8 left-1/2 -translate-x-1/2 flex items-center justify-center">
+              <span class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-green-600 shadow-lg border-4 border-white">
+                <i class="fas fa-leaf text-white text-3xl"></i>
+              </span>
+            </div>
+            <h2 class="text-3xl font-extrabold text-green-800 text-center mt-10 mb-6 tracking-tight drop-shadow">Analysis Results</h2>
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <div class="flex-1 text-center md:text-left">
+                <p class="text-lg font-semibold text-gray-700 mb-2">Could Cause:</p>
+                <span class="inline-block bg-green-200 text-green-900 font-bold text-xl px-6 py-2 rounded-full shadow-md border border-green-400 tracking-wide animate-pulse">${data.class}</span>
+              </div>
+              <div class="flex-1 mt-6 md:mt-0">
+                <div class="bg-white/80 rounded-xl p-4 shadow-inner border border-gray-200">
+                  <h3 class="text-lg font-semibold text-purple-700 mb-2">Alternative Meal:</h3>
+                  <div class="text-gray-700 text-base">
+                    ${excelHtml}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      })
+      .catch(error => {
+        btn.disabled = false;
+        btnText.textContent = 'Analyze Food';
+        spinner.style.display = 'none';
+        alert('Error: ' + error.message);
+      });
+    }
+
+    // Drag and drop functionality
+    const uploadBox = document.querySelector('.upload-box');
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      uploadBox.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      uploadBox.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      uploadBox.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight() {
+      uploadBox.classList.add('border-green-400', 'bg-green-50');
+    }
+
+    function unhighlight() {
+      uploadBox.classList.remove('border-green-400', 'bg-green-50');
+    }
+
+    uploadBox.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files.length) {
+        document.getElementById('upload').files = files;
+        mostrarImagem({target: {files: files}});
+      }
+    }
+  </script>
+</body>
+</html>
